@@ -1,0 +1,58 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    tags: [REL-*]
+
+env:
+    MSTORSJO_REL: 20241001
+
+jobs:
+  Release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout LLVM-MinGW
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          repository: mstorsjo/llvm-mingw
+          ref: ${{ env.MSTORSJO_REL }}
+          path: llvm-mingw
+
+      - name: Fetch LLVM-MinGW distribution
+        uses:  dsaltares/fetch-gh-release-asset@1.1.1
+        with:
+          repo: mstorsjo/llvm-mingw
+          version: tags/${{ env.MSTORSJO_REL }}
+          file: llvm-mingw-${{ env.MSTORSJO_REL }}-msvcrt-ubuntu-20.04-x86_64.tar.xz
+          target: llvm-mingw-dst.tar.xz
+
+      - name: Extract LLVM-MinGW distribution
+        run: tar xf llvm-mingw-dst.tar.xz
+
+      - name: Build MinGW-w64 libraries
+        env:
+          ARCHS: i686
+          CRT_CONFIG_FLAGS: CFLAGS=-march=pentium
+        run: |
+          export PATH=${{ github.workspace }}/llvm-mingw-${{ env.MSTORSJO_REL }}-msvcrt-ubuntu-20.04-x86_64/bin:$PATH
+          cd llvm-mingw
+          ./build-mingw-w64.sh \
+            --with-default-win32-winnt=0x500 \
+            --with-default-msvcrt=msvcrt \
+            --enable-cfguard \
+            out
+
+      - name: Prepare archive
+        run: |
+          cd llvm-mingw/out
+          zip -r ${{ github.workspace }}/bulwa-${{ github.ref_name }}.zip *
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ github.ref_name }}
+          files: |
+            bulwa-${{ github.ref_name }}.zip
