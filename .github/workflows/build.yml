@@ -9,8 +9,16 @@ env:
     MSTORSJO_REL: 20241001
 
 jobs:
-  Release:
+  Build:
+    name: Build for ${{ matrix.target }}
+
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        target:
+          - i486
+          - i586
 
     steps:
       - name: Checkout LLVM-MinGW
@@ -35,7 +43,7 @@ jobs:
       - name: Build MinGW-w64 libraries
         env:
           ARCHS: i686
-          CRT_CONFIG_FLAGS: CFLAGS=-march=pentium
+          CRT_CONFIG_FLAGS: CFLAGS=-march=${{ matrix.target }}
         run: |
           export PATH=${{ github.workspace }}/llvm-mingw-${{ env.MSTORSJO_REL }}-msvcrt-ubuntu-20.04-x86_64/bin:$PATH
           cd llvm-mingw
@@ -45,14 +53,30 @@ jobs:
             --enable-cfguard \
             out
 
-      - name: Prepare archive
-        run: |
-          cd llvm-mingw/out
-          zip -r ${{ github.workspace }}/bulwa-${{ github.ref_name }}.zip *
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bulwa-${{ matrix.target }}
+          path: llvm-mingw/out
 
-      - name: Release
+  Release:
+
+    runs-on: ubuntu-latest
+    needs: Build
+
+    steps:
+      - name: Fetch build output
+        uses: actions/download-artifact@v4
+          
+      - name: Prepare archives
+        run: |
+          cd bulwa-i486 && zip -r ../bulwa-${{ github.ref_name }}-i486.zip * && cd ..
+          cd bulwa-i586 && zip -r ../bulwa-${{ github.ref_name }}-i586.zip * && cd ..
+
+      - name: Prepare archives
         uses: softprops/action-gh-release@v1
         with:
           name: Release ${{ github.ref_name }}
           files: |
-            bulwa-${{ github.ref_name }}.zip
+            bulwa-${{ github.ref_name }}-i486.zip
+            bulwa-${{ github.ref_name }}-i586.zip
