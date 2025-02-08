@@ -48,7 +48,7 @@ jobs:
           export PATH=${{ github.workspace }}/llvm-mingw-${{ env.MSTORSJO_REL }}-msvcrt-ubuntu-20.04-x86_64/bin:$PATH
           cd llvm-mingw
           ./build-mingw-w64.sh \
-            --with-default-win32-winnt=0x500 \
+            --with-default-win32-winnt=0x400 \
             --with-default-msvcrt=msvcrt \
             --enable-cfguard \
             out
