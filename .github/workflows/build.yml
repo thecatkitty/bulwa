@@ -6,7 +6,7 @@ on:
     tags: [REL-*]
 
 env:
-    MSTORSJO_REL: 20241001
+    MSTORSJO_REL: 20250114
 
 jobs:
   Build:
