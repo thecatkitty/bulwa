@@ -10,13 +10,18 @@ env:
 
 jobs:
   Build:
-    name: Build for ${{ matrix.target }}
+    name: Build for ${{ matrix.crtlib }}-${{ matrix.target }}
 
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
+        crtlib:
+          - crtdll
+          - msvcrt
+
         target:
+          - i386
           - i486
           - i586
 
@@ -49,14 +54,14 @@ jobs:
           cd llvm-mingw
           ./build-mingw-w64.sh \
             --with-default-win32-winnt=0x400 \
-            --with-default-msvcrt=msvcrt \
+            --with-default-msvcrt=${{ matrix.crtlib }} \
             --enable-cfguard \
             out
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: bulwa-${{ matrix.target }}
+          name: bulwa-${{ matrix.crtlib }}-${{ matrix.target }}
           path: llvm-mingw/out
 
   Release:
@@ -70,13 +75,21 @@ jobs:
           
       - name: Prepare archives
         run: |
-          cd bulwa-i486 && zip -r ../bulwa-${{ github.ref_name }}-i486.zip * && cd ..
-          cd bulwa-i586 && zip -r ../bulwa-${{ github.ref_name }}-i586.zip * && cd ..
+          cd bulwa-crtdll-i386 && zip -q -r ../bulwa-${{ github.ref_name }}-crtdll-i386.zip * && cd ..
+          cd bulwa-crtdll-i486 && zip -q -r ../bulwa-${{ github.ref_name }}-crtdll-i486.zip * && cd ..
+          cd bulwa-crtdll-i586 && zip -q -r ../bulwa-${{ github.ref_name }}-crtdll-i586.zip * && cd ..
+          cd bulwa-msvcrt-i386 && zip -q -r ../bulwa-${{ github.ref_name }}-msvcrt-i386.zip * && cd ..
+          cd bulwa-msvcrt-i486 && zip -q -r ../bulwa-${{ github.ref_name }}-msvcrt-i486.zip * && cd ..
+          cd bulwa-msvcrt-i586 && zip -q -r ../bulwa-${{ github.ref_name }}-msvcrt-i586.zip * && cd ..
 
       - name: Prepare archives
         uses: softprops/action-gh-release@v1
         with:
           name: Release ${{ github.ref_name }}
           files: |
-            bulwa-${{ github.ref_name }}-i486.zip
-            bulwa-${{ github.ref_name }}-i586.zip
+            bulwa-${{ github.ref_name }}-crtdll-i386.zip
+            bulwa-${{ github.ref_name }}-crtdll-i486.zip
+            bulwa-${{ github.ref_name }}-crtdll-i586.zip
+            bulwa-${{ github.ref_name }}-msvcrt-i386.zip
+            bulwa-${{ github.ref_name }}-msvcrt-i486.zip
+            bulwa-${{ github.ref_name }}-msvcrt-i586.zip
