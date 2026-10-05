@@ -79,8 +79,19 @@ jobs:
 
       - name: Prepare archives
         run: |
-          for dir in headers-* libs-*; do
-            zip -r "bulwa-${{ github.ref_name }}-$dir.zip" "$dir"/*
+          for crt in crtdll msvcrt; do
+            mkdir -p bulwa-$crt/include
+            mkdir -p bulwa-$crt/lib/{i386,i486,i586}
+
+            cp -a headers-$crt/. bulwa-$crt/include/
+
+            for arch in i386 i486 i586; do
+              cp -a libs-$crt-$arch/. bulwa-$crt/lib/$arch/
+            done
+
+            cd bulwa-$crt
+            zip -r ../bulwa-${{ github.ref_name }}-$crt.zip *
+            cd ..
           done
 
       - name: Create release
