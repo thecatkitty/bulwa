@@ -6,7 +6,9 @@ on:
     tags: [REL-*]
 
 env:
-    MSTORSJO_REL: 20250114
+    MSTORSJO_REL: 20250924
+    # Latest before mingw-w64 dd8f1017efbfef9f0cb903ff4f2749ce6bc23314
+    # Further update requires 2b2acb3ae1f5871fb40f19aa5dbf8e7083d4e108 to reach llvm-mingw
 
 jobs:
   Build:
@@ -34,7 +36,7 @@ jobs:
         with:
           repo: mstorsjo/llvm-mingw
           version: tags/${{ env.MSTORSJO_REL }}
-          file: llvm-mingw-${{ env.MSTORSJO_REL }}-msvcrt-ubuntu-20.04-x86_64.tar.xz
+          file: llvm-mingw-${{ env.MSTORSJO_REL }}-msvcrt-ubuntu-22.04-x86_64.tar.xz
           target: llvm-mingw-dst.tar.xz
 
       - name: Extract LLVM-MinGW distribution
@@ -45,7 +47,7 @@ jobs:
           ARCHS: i686
           CRT_CONFIG_FLAGS: CFLAGS=-march=${{ matrix.target }}
         run: |
-          export PATH=${{ github.workspace }}/llvm-mingw-${{ env.MSTORSJO_REL }}-msvcrt-ubuntu-20.04-x86_64/bin:$PATH
+          export PATH=${{ github.workspace }}/llvm-mingw-${{ env.MSTORSJO_REL }}-msvcrt-ubuntu-22.04-x86_64/bin:$PATH
           cd llvm-mingw
           ./build-mingw-w64.sh \
             --with-default-win32-winnt=0x400 \
