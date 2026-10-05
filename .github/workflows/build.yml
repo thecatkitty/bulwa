@@ -12,15 +12,14 @@ env:
 
 jobs:
   Build:
-    name: Build for ${{ matrix.target }}
+    name: Build for ${{ matrix.crt }}-${{ matrix.target }}
 
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        target:
-          - i486
-          - i586
+        target: [i386, i486, i586]
+        crt: [crtdll, msvcrt]
 
     steps:
       - name: Checkout LLVM-MinGW
@@ -51,15 +50,23 @@ jobs:
           cd llvm-mingw
           ./build-mingw-w64.sh \
             --with-default-win32-winnt=0x400 \
-            --with-default-msvcrt=msvcrt \
+            --with-default-msvcrt=${{ matrix.crt }} \
             --enable-cfguard \
             out
 
-      - name: Upload artifact
+      - name: Upload libraries
         uses: actions/upload-artifact@v4
         with:
-          name: bulwa-${{ matrix.target }}
-          path: llvm-mingw/out
+          name: libs-${{ matrix.crt }}-${{ matrix.target }}
+          path: llvm-mingw/out/i686-w64-mingw32/lib
+
+      - name: Upload headers
+        if: matrix.target == 'i386'
+        uses: actions/upload-artifact@v4
+        with:
+          name: headers-${{ matrix.crt }}
+          path: llvm-mingw/out/generic-w64-mingw32/include
+
 
   Release:
 
@@ -69,16 +76,15 @@ jobs:
     steps:
       - name: Fetch build output
         uses: actions/download-artifact@v4
-          
-      - name: Prepare archives
-        run: |
-          cd bulwa-i486 && zip -r ../bulwa-${{ github.ref_name }}-i486.zip * && cd ..
-          cd bulwa-i586 && zip -r ../bulwa-${{ github.ref_name }}-i586.zip * && cd ..
 
       - name: Prepare archives
+        run: |
+          for dir in headers-* libs-*; do
+            zip -r "bulwa-${{ github.ref_name }}-$dir.zip" "$dir"/*
+          done
+
+      - name: Create release
         uses: softprops/action-gh-release@v1
         with:
           name: Release ${{ github.ref_name }}
-          files: |
-            bulwa-${{ github.ref_name }}-i486.zip
-            bulwa-${{ github.ref_name }}-i586.zip
+          files: bulwa-${{ github.ref_name }}-*.zip
