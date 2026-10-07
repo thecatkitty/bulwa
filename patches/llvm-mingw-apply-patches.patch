@@ -1,0 +1,12 @@
+diff --git a/build-mingw-w64.sh b/build-mingw-w64.sh
+index 0e8db4b..8c3da5e 100755
+--- a/build-mingw-w64.sh
++++ b/build-mingw-w64.sh
+@@ -65,6 +65,7 @@ cd mingw-w64
+ if [ -n "$SYNC" ] || [ -n "$CHECKOUT" ]; then
+     [ -z "$SYNC" ] || git fetch
+     git checkout $MINGW_W64_VERSION
++    git apply ../../patches/mingw-w64-relax-_invoke_watson.patch
+ fi
+ 
+ [ -z "$CHECKOUT_ONLY" ] || exit 0

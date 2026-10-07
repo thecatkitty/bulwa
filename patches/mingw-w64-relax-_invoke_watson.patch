@@ -1,0 +1,70 @@
+diff --git a/mingw-w64-crt/misc/_invoke_watson.c b/mingw-w64-crt/misc/_invoke_watson.c
+index 6bc1e2505..6a91a187a 100644
+--- a/mingw-w64-crt/misc/_invoke_watson.c
++++ b/mingw-w64-crt/misc/_invoke_watson.c
+@@ -5,6 +5,7 @@
+  */
+ 
+ #include <corecrt.h>
++#include <stddef.h>
+ #include <windows.h>
+ 
+ /* keep SEH_INLINE_ASM in sync with mingw-w64-crt/crt/crtexe.c */
+@@ -48,28 +49,38 @@ DECLSPEC_NOINLINE __MINGW_ATTRIB_NORETURN void __cdecl _invoke_watson(const wcha
+      * not filled because they are overwritten few lines below.
+      */
+     asm volatile(
+-        "mov %%eax, %0\n\t"
+-        "mov %%ecx, %1\n\t"
+-        "mov %%edx, %2\n\t"
+-        "mov %%ebx, %3\n\t"
+-        "mov %%esi, %4\n\t"
+-        "mov %%edi, %5\n\t"
+-        "movw %%ss, %w6\n\t"
+-        "movw %%cs, %w7\n\t"
+-        "movw %%ds, %w8\n\t"
+-        "movw %%es, %w9\n\t"
+-        "movw %%fs, %w10\n\t"
+-        "movw %%gs, %w11\n\t"
++        "movl %%eax, %c[eax](%[ctx])\n\t"
++        "movl %%ecx, %c[ecx](%[ctx])\n\t"
++        "movl %%edx, %c[edx](%[ctx])\n\t"
++        "movl %%ebx, %c[ebx](%[ctx])\n\t"
++        "movl %%esi, %c[esi](%[ctx])\n\t"
++        "movl %%edi, %c[edi](%[ctx])\n\t"
++
++        "movw %%ss, %c[ss](%[ctx])\n\t"
++        "movw %%cs, %c[cs](%[ctx])\n\t"
++        "movw %%ds, %c[ds](%[ctx])\n\t"
++        "movw %%es, %c[es](%[ctx])\n\t"
++        "movw %%fs, %c[fs](%[ctx])\n\t"
++        "movw %%gs, %c[gs](%[ctx])\n\t"
++
+         "pushf\n\t"
+-        "pop %12"
++        "popl %c[eflags](%[ctx])\n\t"
+       :
+-        /* Specify only "m" (memory) to prevent using registers and clobbering their content. */
+-        "=m" (context.Eax), "=m" (context.Ecx), "=m" (context.Edx),
+-        "=m" (context.Ebx), "=m" (context.Esi), "=m" (context.Edi),
+-        "=m" (context.SegSs), "=m" (context.SegCs), "=m" (context.SegDs),
+-        "=m" (context.SegEs), "=m" (context.SegFs), "=m" (context.SegGs),
+-        "=m" (context.EFlags)
+       :
++        [ctx] "r"(&context),
++        [eax] "i"(offsetof(CONTEXT, Eax)),
++        [ecx] "i"(offsetof(CONTEXT, Ecx)),
++        [edx] "i"(offsetof(CONTEXT, Edx)),
++        [ebx] "i"(offsetof(CONTEXT, Ebx)),
++        [esi] "i"(offsetof(CONTEXT, Esi)),
++        [edi] "i"(offsetof(CONTEXT, Edi)),
++        [ss] "i"(offsetof(CONTEXT, SegSs)),
++        [cs] "i"(offsetof(CONTEXT, SegCs)),
++        [ds] "i"(offsetof(CONTEXT, SegDs)),
++        [es] "i"(offsetof(CONTEXT, SegEs)),
++        [fs] "i"(offsetof(CONTEXT, SegFs)),
++        [gs] "i"(offsetof(CONTEXT, SegGs)),
++        [eflags] "i"(offsetof(CONTEXT, EFlags))
+       : "memory" /* compiler barrier */
+     );
+     context.ContextFlags = CONTEXT_CONTROL;
